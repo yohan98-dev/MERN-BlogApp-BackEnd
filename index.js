@@ -61,6 +61,8 @@ app.post("/logout", (req, res) => {
   res.cookie("token", "").json("ok");
 });
 
+app.post("/post", (req, res) => {});
+
 app.listen(4000);
 
 //ngSwmqlNDBy7ZLw8
