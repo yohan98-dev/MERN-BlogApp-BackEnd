@@ -14,6 +14,7 @@ const fs = require("fs");
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
 app.use(express.json());
 app.use(cookieParser());
+app.use("/uploads", express.static(__dirname + "/uploads"));
 
 const salt = bcrypt.genSaltSync(10);
 const secret = "asdfe45we45w345wegw345werjktjwertkj";
@@ -70,18 +71,34 @@ app.post("/post", uploadMiddleware.single("file"), async (req, res) => {
   const parts = originalname.split(".");
   const ext = parts[parts.length - 1];
   const newPath = path + "." + ext;
-  fs.renameSync(path, path, newPath);
+  fs.renameSync(path, newPath);
 
-  const { title, summary, content } = req.body;
+  const { token } = req.cookies;
 
-  const postDoc = await Post.create({
-    title,
-    summary,
-    content,
-    cover: newPath,
+  jwt.verify(token, secret, {}, async (err, info) => {
+    if (err) throw err;
+
+    const { title, summary, content } = req.body;
+
+    const postDoc = await Post.create({
+      title,
+      summary,
+      content,
+      cover: newPath,
+      author: info.id,
+    });
+    res.json({ postDoc });
   });
+});
 
-  res.json({ postDoc });
+app.get("/post", async (req, res) => {
+  res.json(
+    await Post.find()
+      .populate("author", ["username"])
+      .sort({ ceatedAt: -1 })
+      .limit(20)
+  );
+  // res.json(posts);
 });
 
 app.listen(4000);
